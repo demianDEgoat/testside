@@ -33,11 +33,10 @@
 
             fetch(corsProxy + encodeURIComponent(targetSite))
               .then(res => {
-                if (res.ok) return res.json();
+                if (res.ok) return res.text(); // Read the response directly as raw text (HTML)
                 throw new Error('Proxy connection failed');
               })
-              .then(data => {
-                const htmlString = data.contents;
+              .then(htmlString => { // htmlString now contains the raw HTML code
                 const parser = new DOMParser();
                 const targetDoc = parser.parseFromString(htmlString, 'text/html');
 
