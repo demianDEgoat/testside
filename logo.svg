@@ -33,14 +33,15 @@
 
             fetch(corsProxy + encodeURIComponent(targetSite))
               .then(res => {
-                if (res.ok) return res.text(); // Read the response directly as raw text (HTML)
+                if (res.ok) return res.text();
                 throw new Error('Proxy connection failed');
               })
-              .then(htmlString => { // htmlString now contains the raw HTML code
+              .then(htmlString => {
                 const parser = new DOMParser();
+                // Parse using 'text/html' which is lenient and won't crash on unclosed HTML tags
                 const targetDoc = parser.parseFromString(htmlString, 'text/html');
 
-                // Resolve relative URLs to absolute URLs so CSS, images, and scripts load
+                // Resolve relative URLs to absolute URLs so assets load
                 const resolveUrl = (attr, element) => {
                   const val = element.getAttribute(attr);
                   if (val && !val.startsWith('http://') && !val.startsWith('https://') && !val.startsWith('//') && !val.startsWith('data:')) {
@@ -58,14 +59,24 @@
                 targetDoc.querySelectorAll('script[src]').forEach(el => resolveUrl('src', el));
                 targetDoc.querySelectorAll('img[src]').forEach(el => resolveUrl('src', el));
 
-                // Clear loading screen and insert the fetched page elements
-                const body = document.body;
-                body.innerHTML = targetDoc.body.innerHTML;
+                // Clear the loading screen first
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen) {
+                  loadingScreen.remove();
+                }
 
-                // Copy over any stylesheets or script links from the fetched <head> to our <head>
+                // Import the parsed HTML body into our XML context (avoids XML parsing errors)
+                const importedBody = document.importNode(targetDoc.body, true);
+                const body = document.body;
+                while (importedBody.firstChild) {
+                  body.appendChild(importedBody.firstChild);
+                }
+
+                // Import and append stylesheets/styles from the head
                 const head = document.head;
                 targetDoc.querySelectorAll('link, style').forEach(el => {
-                  head.appendChild(el);
+                  const importedEl = document.importNode(el, true);
+                  head.appendChild(importedEl);
                 });
 
                 // Force scripts to execute
@@ -80,7 +91,10 @@
                 });
               })
               .catch(err => {
-                document.getElementById('loading-screen').innerHTML = '<h2>Failed to load mirror</h2>';
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen) {
+                  loadingScreen.innerHTML = '<h2>Failed to load mirror</h2>';
+                }
                 console.error(err);
               });
           ]]>
