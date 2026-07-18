@@ -29,7 +29,7 @@
         <script type="text/javascript">
           <![CDATA[
             const targetSite = 'https://figurecc.cine-softwares.workers.dev';
-            const corsProxy = 'https://world.figure-softwares.workers.dev/';
+            const corsProxy = 'https://world.figure-softwares.workers.dev/?url=';
 
             fetch(corsProxy + encodeURIComponent(targetSite))
               .then(res => {
