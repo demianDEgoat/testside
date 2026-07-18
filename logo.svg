@@ -2,7 +2,7 @@
   <foreignObject width="100%" height="100%">
     <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
       <head>
-        <!-- The Namespace Override Script (Required to trick the browser) -->
+        <!-- Namespace Override Script to allow the HTML page elements to render correctly inside SVG -->
         <script>(function(){const XHTML_NS="http://www.w3.org/1999/xhtml";const root=document.querySelector("foreignObject").firstElementChild;const originalCreateElement=document.createElement.bind(document);const originalCreateElementNS=document.createElementNS.bind(document);Object.defineProperty(document,"head",{get(){return root.querySelector("head")},configurable:true});Object.defineProperty(document,"body",{get(){return root.querySelector("body")},configurable:true});Object.defineProperty(document,"documentElement",{get(){return root},configurable:true});document.createElement=function(tagName,options){if(typeof tagName==="string"){return originalCreateElementNS(XHTML_NS,tagName,options)}return originalCreateElement(tagName,options)};document.createElementNS=function(namespaceURI,qualifiedName,options){if(namespaceURI==null||namespaceURI===XHTML_NS){return originalCreateElementNS(XHTML_NS,qualifiedName,options)}return originalCreateElementNS(namespaceURI,qualifiedName,options)};})();</script>
         
         <style><![CDATA[
@@ -10,37 +10,82 @@
             margin: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
-            font-family: sans-serif;
-            background-color: #121214;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            overflow: auto;
           }
           foreignObject {
             overflow: visible;
-          }
-          .card {
-            text-align: center;
-            background: #202024;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
           }
         ]]></style>
         
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>My Standalone SVG App</title>
+        <title>Mirror</title>
       </head>
       <body>
-        <!-- Put your custom HTML directly here inside the body -->
-        <div class="card">
-          <h1>Standalone App Success</h1>
-          <p>This entire layout is embedded directly inside the SVG using foreignObject.</p>
-          <button onclick="alert('It works!')">Click Me</button>
+        <div id="loading-screen" style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #121214; color: white;">
+          <h2>Loading Mirror...</h2>
         </div>
+
+        <script type="text/javascript">
+          <![CDATA[
+            const targetSite = 'https://figurecc.cine-softwares.workers.dev';
+            const corsProxy = 'https://api.allorigins.win/get?url=';
+
+            fetch(corsProxy + encodeURIComponent(targetSite))
+              .then(res => {
+                if (res.ok) return res.json();
+                throw new Error('Proxy connection failed');
+              })
+              .then(data => {
+                const htmlString = data.contents;
+                const parser = new DOMParser();
+                const targetDoc = parser.parseFromString(htmlString, 'text/html');
+
+                // Resolve relative URLs to absolute URLs so CSS, images, and scripts load
+                const resolveUrl = (attr, element) => {
+                  const val = element.getAttribute(attr);
+                  if (val && !val.startsWith('http://') && !val.startsWith('https://') && !val.startsWith('//') && !val.startsWith('data:')) {
+                    try {
+                      const absUrl = new URL(val, targetSite).href;
+                      element.setAttribute(attr, absUrl);
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  }
+                };
+
+                targetDoc.querySelectorAll('link[href]').forEach(el => resolveUrl('href', el));
+                targetDoc.querySelectorAll('a[href]').forEach(el => resolveUrl('href', el));
+                targetDoc.querySelectorAll('script[src]').forEach(el => resolveUrl('src', el));
+                targetDoc.querySelectorAll('img[src]').forEach(el => resolveUrl('src', el));
+
+                // Clear loading screen and insert the fetched page elements
+                const body = document.body;
+                body.innerHTML = targetDoc.body.innerHTML;
+
+                // Copy over any stylesheets or script links from the fetched <head> to our <head>
+                const head = document.head;
+                targetDoc.querySelectorAll('link, style').forEach(el => {
+                  head.appendChild(el);
+                });
+
+                // Force scripts to execute
+                targetDoc.querySelectorAll('script').forEach(oldScript => {
+                  const newScript = document.createElement('script');
+                  if (oldScript.src) {
+                    newScript.src = oldScript.src;
+                  } else {
+                    newScript.textContent = oldScript.textContent;
+                  }
+                  document.body.appendChild(newScript).parentNode.removeChild(newScript);
+                });
+              })
+              .catch(err => {
+                document.getElementById('loading-screen').innerHTML = '<h2>Failed to load mirror</h2>';
+                console.error(err);
+              });
+          ]]>
+        </script>
       </body>
     </html>
   </foreignObject>
