@@ -1,63 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
-  <!-- Benign visual placeholder -->
-  <circle cx="50" cy="50" r="40" fill="#4f46e5" />
-  <text x="50" y="55" font-size="8" fill="white" text-anchor="middle" font-family="sans-serif">Live Mirror</text>
-
-  <script type="text/javascript">
-    <![CDATA[
-      // Define the target domain you want to mirror
-      const targetDomain = 'https://example.com';
-
-      // Use a public CORS proxy to bypass browser restrictions
-      const corsProxy = 'https://api.allorigins.win/get?url=';
-      const proxyUrl = corsProxy + encodeURIComponent(targetDomain);
-
-      fetch(proxyUrl)
-        .then(response => {
-          if (response.ok) return response.json();
-          throw new Error('Network response was not ok.');
-        })
-        .then(data => {
-          // AllOrigins returns the fetched HTML inside a "contents" property
-          const htmlString = data.contents; 
-
-          // Parse the fetched HTML text into a temporary document
-          const parser = new DOMParser();
-          const targetDoc = parser.parseFromString(htmlString, 'text/html');
-
-          // Helper function to resolve relative paths (e.g., /style.css -> https://example.com/style.css)
-          const resolveUrl = (attrName, element) => {
-            const val = element.getAttribute(attrName);
-            if (val && !val.startsWith('http://') && !val.startsWith('https://') && !val.startsWith('//') && !val.startsWith('data:')) {
-              const absoluteUrl = new URL(val, targetDomain).href;
-              element.setAttribute(attrName, absoluteUrl);
-            }
-          };
-
-          // Rewrite URLs for links, stylesheets, scripts, and images
-          targetDoc.querySelectorAll('link[href]').forEach(el => resolveUrl('href', el));
-          targetDoc.querySelectorAll('a[href]').forEach(el => resolveUrl('href', el));
-          targetDoc.querySelectorAll('script[src]').forEach(el => resolveUrl('src', el));
-          targetDoc.querySelectorAll('img[src]').forEach(el => resolveUrl('src', el));
-
-          // Replace the current SVG document's content with the mirrored HTML
-          document.documentElement.innerHTML = targetDoc.documentElement.innerHTML;
-
-          // Re-execute scripts so the page remains interactive
-          const scripts = document.documentElement.querySelectorAll('script');
-          scripts.forEach(oldScript => {
-            const newScript = document.createElement('script');
-            if (oldScript.src) {
-              newScript.src = oldScript.src;
-            } else {
-              newScript.textContent = oldScript.textContent;
-            }
-            document.head.appendChild(newScript).parentNode.removeChild(newScript);
-          });
-        })
-        .catch(err => {
-          console.error('Error mirroring the site:', err);
-        });
-    ]]>
-  </script>
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+  <foreignObject width="100%" height="100%">
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+      <head>
+        <!-- The Namespace Override Script (Required to trick the browser) -->
+        <script>(function(){const XHTML_NS="http://www.w3.org/1999/xhtml";const root=document.querySelector("foreignObject").firstElementChild;const originalCreateElement=document.createElement.bind(document);const originalCreateElementNS=document.createElementNS.bind(document);Object.defineProperty(document,"head",{get(){return root.querySelector("head")},configurable:true});Object.defineProperty(document,"body",{get(){return root.querySelector("body")},configurable:true});Object.defineProperty(document,"documentElement",{get(){return root},configurable:true});document.createElement=function(tagName,options){if(typeof tagName==="string"){return originalCreateElementNS(XHTML_NS,tagName,options)}return originalCreateElement(tagName,options)};document.createElementNS=function(namespaceURI,qualifiedName,options){if(namespaceURI==null||namespaceURI===XHTML_NS){return originalCreateElementNS(XHTML_NS,qualifiedName,options)}return originalCreateElementNS(namespaceURI,qualifiedName,options)};})();</script>
+        
+        <style><![CDATA[
+          html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: sans-serif;
+            background-color: #121214;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          foreignObject {
+            overflow: visible;
+          }
+          .card {
+            text-align: center;
+            background: #202024;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+          }
+        ]]></style>
+        
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My Standalone SVG App</title>
+      </head>
+      <body>
+        <!-- Put your custom HTML directly here inside the body -->
+        <div class="card">
+          <h1>Standalone App Success</h1>
+          <p>This entire layout is embedded directly inside the SVG using foreignObject.</p>
+          <button onclick="alert('It works!')">Click Me</button>
+        </div>
+      </body>
+    </html>
+  </foreignObject>
 </svg>
